@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="x-dns-prefetch-control" content="off">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' data:; script-src 'self' 'unsafe-inline'; img-src 'self' data: https://orquidealucinada.net https://img.shields.io; connect-src 'none'">
+    <link rel="icon" href="tucan.ico" sizes="any">
+    <link rel="icon" type="image/png" href="tucan.png">
+    <title>Mi Kanban</title>
+    <script src="marked.min.js"></script>
+    <style>
+        /* SIN ANIMACIONES Y SIN BLUR */
+        * { margin: 0; padding: 0; box-sizing: border-box; transition: none !important; animation: none !important; }
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #5F9EA0; min-height: 100vh; }
+
+        /* CABECERA: IMAGEN A LA IZQUIERDA Y TEXTO A LA DERECHA */
+        .board-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 25px;
+            padding:  0px;
+            color: white;
+
+        }
+        .board-header img {
+            width: 80px; 
+            height: auto;
+            border-radius: 12px;
+        }
+        .header-text {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+            text-shadow: 1px 1px 0 #000;
+        }
+        .board-header h1 {
+            font-size: 2.5rem;
+            padding: 0;
+            margin-top: 0;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 0px #000;
+        }
+        .board-header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .hamburger-menu {
+            position: fixed; top: 10px; left: 10px; width: 50px; height: 50px;
+            background: #4a6fa5; color: white; border: none; border-radius: 10px;
+            box-shadow: 2px 2px 0 #000;
+            text-shadow: 1px 1px 0 #000;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 24px; z-index: 1500;
+        }
+        .hamburger-menu:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+
+        .sidebar {
+            position: fixed; top: 0; left: -350px; width: 350px; height: 100vh;
+            background: #4a6fa5; z-index: 2000; padding: 20px 20px 20px; overflow-y: auto;
+            border-right: 2px solid #333; color:white;
+        }
+        
+        .sidebar h3 {text-shadow: 1px 1px black;}
+        
+        .sidebar.open { left: 0; }
+        .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; z-index: 1999; }
+        .sidebar-overlay.show { display: block; }
+
+        .sidebar-section { margin-bottom: 15px; /*border-bottom: 1px solid #eee; padding-bottom: 15px;*/ }
+        .btn { padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 8px; font-size: 13px; box-shadow: 1px 1px black;}
+        .btn:hover {box-shadow: -1px -1px black;}
+        .btn-primary { background: #4f46e5; color: white; }
+        .btn-success { background: #10b981; color: white;  text-shadow: 1px 1px black;}
+        .btn-danger { background: #ef4444; color: white; text-shadow: 1px 1px black;}
+        .btn-ghost { background: #79addc; color: #ffffff;  text-shadow: 1px 1px #000000;}
+        .input-field { width: 100%; padding: 10px; margin: 5px 0; border: 2px solid #ddd; border-radius: 8px; }
+        .input-field:hover {border-color: black;}
+
+        /* KANBAN LAYOUT */
+        .kanban-wrapper { display: flex; justify-content: center; padding: 20px; width: 100%; }
+        .kanban-board { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 20px; 
+            justify-content: flex-start;
+            max-width: 1400px;
+        }
+        
+        .column { background: #4a6fa5; width: 320px; border-radius: 12px; display: flex; flex-direction: column; border: 1px solid #000; box-shadow: 3px 3px 3px #000; }
+        .tasks-container { padding: 10px; overflow-y: auto; height: 480px; background: #4a6fa5; border-radius: 0 0 12px 12px;}
+        .column-header { padding: 15px; font-weight: bold; display: flex; justify-content: space-between; border-bottom: 1px solid #000; align-items: center; color: white;text-shadow: 1px 1px 0 #000; }
+        .column:hover {border-color: white;}
+
+        /* TAREAS Y NOTAS */
+        .task { background: white; padding: 15px; border-radius: 8px; margin-bottom: 12px; border-left: 5px solid navy; box-shadow: 2px 2px 0 black; }
+        .task:hover { border-left: 5px solid red;}
+        .tag { background: #e0e7ff; color: #4338ca; padding: 2px 8px; border-radius: 5px; font-size: 11px; margin: 2px; display: inline-block;  box-shadow: 1px 1px black;}
+        .tag:hover { box-shadow: -1px -1px black;}
+        .tag-urgente { background: #dc2626; color: white; }
+        .tag-importante { background: #16a34a; color: #fef08a; }
+        
+        .note-item { margin-top: 8px; border: 1px solid #ccc; border-radius: 6px; }
+        .note-header { background: #eee; padding: 8px 12px; font-size: 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: bold; color:black;}
+        .note-body { display: none; padding: 15px; background: white; border-top: 1px solid #ccc; font-size: 13px; line-height: 1.5; overflow-wrap: break-word; }
+        .note-item.expanded .note-body { display: block; }
+
+        /* TOOLBAR MARKDOWN */
+        .toolbar { display: flex; gap: 5px; background: #f3f4f6; padding: 8px; border: 2px solid #ddd; border-bottom: none; border-radius: 8px 8px 0 0; align-items: center; color: black;}
+        .toolbar select, .toolbar button { padding: 5px; cursor: pointer; font-size: 12px; font-weight: bold; border-radius: 4px; border: 1px solid #ccc; background: white; color: black;}
+
+        /* RENDER MARKDOWN */
+        .markdown-content h1 { font-size: 1.4rem; margin: 10px 0; border-bottom: 2px solid #eee; }
+        .markdown-content h2 { font-size: 1.2rem; margin: 8px 0; border-bottom: 1px solid #eee; }
+        .markdown-content h3 { font-size: 1.1rem; margin: 6px 0; }
+        .markdown-content pre { background: #222; color: #fff; padding: 10px; border-radius: 5px; margin: 10px 0; font-family: monospace; overflow-x: auto; }
+        .markdown-content code { background: #f0f0f0; color: #c7254e; padding: 2px 4px; border-radius: 4px; font-family: monospace; }
+        .markdown-content hr { margin: 15px 0; border: 0; border-top: 2px solid #ddd; }
+        .markdown-content ul { padding-left: 20px; margin: 10px 0; }
+        .markdown-content ol { padding-left: 20px; margin: 10px 0; }
+        .markdown-content blockquote { border-left: 4px solid #ccc; margin: 10px 0; padding: 5px 12px; color: #555; background: #f9f9f9; border-radius: 0 4px 4px 0; }
+        .markdown-content a { color: #4338ca; }
+        .markdown-content table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 13px; }
+        .markdown-content th, .markdown-content td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
+        .markdown-content th { background: #f3f4f6; font-weight: bold; }
+        .markdown-content input[type="checkbox"] { margin-right: 6px; cursor: default; }
+        .markdown-content li.task-list-item { list-style: none; margin-left: -20px; padding: 3px 6px; margin-bottom: 3px; border-radius: 4px; background: white; color: black; }
+        .markdown-content li.task-list-item:has(input[type="checkbox"]:checked) { color: green; }
+
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; z-index: 3000; align-items: center; justify-content: center; }
+        .modal.show { display: flex; }
+        .modal-content { background: white; padding: 30px; border-radius: 12px; width: 95%; max-width: 800px; max-height: 90vh; overflow-y: auto; }
+        #readmeModal .modal-content { display: flex; flex-direction: column; max-height: 90vh; overflow-y: hidden; }
+        #readmeModal .modal-content > div:first-child { flex-shrink: 0; }
+        #readmeContent { overflow-y: auto; flex: 1; padding-top: 10px; }
+
+        .header-search { display: flex; align-items: center; gap: 5px; }
+        .header-search input { padding: 8px 12px; border-radius: 8px; border: 2px solid rgba(0,80,0,0.6); background: rgba(0,60,0,0.25); color: white; font-size: 14px; width: 220px; }
+        .header-search input::placeholder { color: rgba(255,255,255,0.8); }
+        .header-search input:focus { outline: none; border-color: #2d6a2d; background: rgba(0,60,0,0.4); }
+        .header-search button { background: rgba(0,60,0,0.25); border: 2px solid rgba(0,80,0,0.6); color: white; border-radius: 8px; padding: 8px 10px; cursor: pointer; font-weight: bold; }
+        .header-search button:hover { background: rgba(0,60,0,0.45); }
+
+        .readme-tabs { display: flex; gap: 6px; }
+        .readme-tab { padding: 7px 16px; border: 2px solid #ddd; border-radius: 8px; background: #e5e7eb; color: #374151; cursor: pointer; font-weight: bold; font-size: 13px; }
+        .readme-tab.active { background: #4f46e5; color: white; border-color: #4f46e5; }
+
+        /* TOAST */
+        #toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); padding: 10px 22px; border-radius: 8px; font-weight: bold; font-size: 14px; z-index: 9999; display: none; box-shadow: 2px 2px 0 #000; border: 1px solid #000; }
+        #toast.success { background: #10b981; color: white; }
+        #toast.error   { background: #ef4444; color: white; }
+        #toast.show    { display: block; }
+
+        /* MODAL DE CONFIRMACIÓN */
+        #confirmModal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; z-index: 5000; align-items: center; justify-content: center; }
+        #confirmModal.show { display: flex; }
+        #confirmModal .modal-content { max-width: 380px; text-align: center; }
+        #confirmModal p { margin: 10px 0 20px; font-size: 15px; }
+        #confirmModal .confirm-btns { display: flex; gap: 10px; justify-content: center; }
+        #confirmModal .confirm-btns button { width: auto; padding: 10px 28px; }
+
+        /* CONTADOR EN CABECERA DE COLUMNA */
+        .col-count { background: rgba(255,255,255,0.25); border-radius: 10px; padding: 1px 7px; font-size: 12px; font-weight: bold; margin-left: 6px; }
+        .col-name-input { background: rgba(255,255,255,0.2); border: 1px dashed rgba(255,255,255,0.7); border-radius: 4px; color: white; font-weight: bold; font-size: inherit; padding: 2px 6px; width: 140px; text-shadow: 1px 1px 0 #000; }
+        .col-name-input:focus { outline: none; background: rgba(255,255,255,0.35); }
+        .due-date-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; padding: 0 5px 0 5px; border-radius: 5px; margin-top: 0px;  font-weight: bold; box-shadow: 1px 1px black; }
+        .due-ok    { background: #d1fae5; color: #065f46; }
+        .due-soon  { background: #fef3c7; color: #92400e; }
+        .due-late  { background: #fee2e2; color: #991b1b; padding-bottom:0;}
+
+        /* SELECTOR DE COLOR DE COLUMNA */
+        .col-color-btn { border: none; background: none; cursor: pointer; font-size: 14px; padding: 2px 4px; border-radius: 4px; color: white; opacity: 0.8;  text-shadow: 1px 1px black;}
+        .col-color-btn:hover { opacity: 1; background: rgba(255,255,255,0.15); }
+        .col-color-picker { display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid #333; border-radius: 10px; padding: 8px; z-index: 100; box-shadow: 1px 1px 3px #000; flex-wrap: wrap; gap: 6px; width: 78px; }
+        .col-color-picker.open { display: flex; }
+        .col-color-swatch { width: 26px; height: 26px; border-radius: 50%; cursor: pointer; border: 2px solid #333; }
+        .col-color-swatch:hover { border-color: white; transform: scale(1.15); }
+
+        /* INDICADOR DE FILTRO ACTIVO */
+        .filter-bar { display: flex; align-items: center; gap: 8px; padding: 4px 20px 0; flex-wrap: wrap; min-height: 0; justify-content: center; }
+        .filter-badge { background: #006600; color: #fff; border-radius: 20px; padding: 3px 12px; font-size: 12px; font-weight: bold; border: 1px solid #000; display: flex; align-items: center; gap: 6px; }
+        .filter-badge button { border: none; background: none; cursor: pointer; font-weight: bold; font-size: 13px; padding: 0 2px; }
+
+        /* FECHA EN NOTAS */
+        .note-date { font-size: 10px; color: #999; font-weight: normal; margin-left: 8px; }
+
+        /* DRAG HANDLE (reordenar tareas dentro de columna) */
+        .drag-handle { cursor: grab; color: #aaa; font-size: 16px; padding: 0 4px 0 0; user-select: none; align-self: center; }
+        .drag-handle:active { cursor: grabbing; }
+        .task.drag-over { border-top: 3px solid #4f46e5; }
+
+        /* BOTONES DE ACCIÓN */
+        .btn-icon { border: none; background: none; cursor: pointer; border-radius: 5px; padding: 2px 5px; line-height: 1; }
+        .btn-icon:hover { background: rgba(0,0,0,0.08); }
+        .btn-icon-edit { color: #4a6fa5; font-size: 1.2rem; }
+        .btn-icon-edit:hover { color: #2d4f80; }
+        .btn-icon-delete { font-size: 1rem; opacity: 0.7; }
+        .btn-icon-delete:hover { opacity: 1; }
+
+        /* LAYOUT INTERNO DE TAREAS */
+        .task-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; }
+        .task-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; word-break: break-word; }
+        .task-actions { flex-shrink: 0; display: flex; }
+        .task-tags { margin: 5px 0; }
+        .btn-add-note { font-size: 11px; padding: 4px; }
+        .note-title-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; word-break: break-word; flex: 1; }
+        .note-actions { flex-shrink: 0; display: flex; }
+        .col-header-actions { display: flex; align-items: center; gap: 2px; }
+
+        @media (max-width: 768px) { .sidebar { width: 85%; left: -85%; } .column { width: 100%; } .kanban-board { width: 100%; } .board-header { flex-direction: column; text-align: center; } .header-text { text-align: center; } .header-search { width: 100%; justify-content: center; } #readmeModal .modal-content { max-height: 80vh; } }
+/* lapicito:✎*/
+/* tacho:🗑/*
+
+    </style>
+</head>
+<body>
+
+    <button class="hamburger-menu" onclick="toggleSidebar(true)">☰</button>
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar(false)"></div>
+
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-section">
+            <h3>Etiquetas (Tags)</h3>
+            <select id="tagFilterSelect" class="input-field" onchange="applyTagFilter(this.value)"></select>
+            <button class="btn btn-ghost" onclick="clearTagFilter()">Limpiar Filtro</button>
+        </div>
+
+        <div class="sidebar-section">
+            <h3>Gestión de Columnas</h3>
+            <input type="text" id="newColName" class="input-field" placeholder="Nombre de columna...">
+            <button class="btn btn-primary" onclick="addColumn()">+ Añadir Columna</button>
+        </div>
+
+        <div class="sidebar-section">
+            <h3>Nueva Tarea</h3>
+            <select id="colSelect" class="input-field"></select>
+            <input type="text" id="newTaskTitle" class="input-field" placeholder="Título...">
+            <input type="text" id="newTaskTags" class="input-field" placeholder="Tags (comas)...">
+            <button class="btn btn-primary" onclick="addTask()">+ Crear Tarea</button>
+        </div>
+
+        <div class="sidebar-section">
+            <h3 style="margin-bottom: 5px;">Backup</h3>
+            <button class="btn btn-success" onclick="exportData()">📤 Exportar JSON</button>
+            <button class="btn btn-ghost" onclick="document.getElementById('importFile').click()">📥 Importar JSON</button>
+            <input type="file" id="importFile" style="display:none" onchange="importData(event)">
+            <button class="btn btn-danger" onclick="clearAllData()">⚠️ BORRAR TODO</button>
+        </div>
+        
+        <div style="margin-top:15px;">
+            <button class="btn btn-ghost" onclick="openReadme()">📖 Ayuda / README</button>
+        </div>
+        <div class="sidebar-section" style="color: white;text-align:center; margin-top:15px;box-shadow: 1px 1px 2px black; border-radius: 8px;padding: 10px;">
+             <!--- img src="tucan.png" width=30% / ---> <h3>Mi Kanban 1.0 <br> DHB - 2026</h3>
+        </div>
+
+    </div>
+
+    <header class="board-header">
+        <img src="tucan.png" alt="Kanban Logo">
+        <div class="header-text">
+            <h1>Mi Kanban</h1>
+            <p>Gestiona tus proyectos de forma visual y rápida.<br><i>(Optimizado para Firefox y Brave)</i></p>
+        </div>
+        <div class="header-search">
+            <input type="text" id="searchInput" placeholder="🔍 Buscar..." oninput="applySearch(this.value)">
+            <button onclick="clearSearch()" title="Limpiar">✕</button>
+        </div>
+    </header>
+
+    <div class="filter-bar" id="filterBar"></div>
+
+    <div class="kanban-wrapper">
+        <div class="kanban-board" id="kanbanBoard"></div>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toast"></div>
+
+    <!-- MODAL CONFIRMACIÓN -->
+    <div id="confirmModal">
+        <div class="modal-content">
+            <h3 id="confirmTitle">¿Confirmar?</h3>
+            <p id="confirmMsg"></p>
+            <div class="confirm-btns">
+                <button class="btn btn-ghost" onclick="closeConfirm()">Cancelar</button>
+                <button class="btn btn-danger" id="confirmOkBtn">Borrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="taskModal">
+        <div class="modal-content">
+            <h2>Editar Tarea</h2>
+            <label>Título:</label>
+            <input type="text" id="editTaskTitle" class="input-field">
+            <label>Etiquetas:</label>
+            <input type="text" id="editTaskTags" class="input-field">
+            <label>Fecha de vencimiento:</label>
+            <input type="date" id="editTaskDue" class="input-field">
+            <div style="display:flex; gap:10px; margin-top:20px; justify-content:flex-end">
+                <button class="btn btn-ghost" style="width:auto" onclick="closeModal('taskModal')">Cancelar</button>
+                <button class="btn btn-primary" style="width:auto" onclick="updateTask()">Actualizar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="quickAddModal">
+        <div class="modal-content" style="max-width:460px;">
+            <h2 id="quickAddTitle">Nueva Tarea</h2>
+            <label>Título:</label>
+            <input type="text" id="quickTaskTitle" class="input-field" placeholder="Título...">
+            <label>Etiquetas:</label>
+            <input type="text" id="quickTaskTags" class="input-field" placeholder="Tags (comas)...">
+            <label>Fecha de vencimiento:</label>
+            <input type="date" id="quickTaskDue" class="input-field">
+            <div style="display:flex; gap:10px; margin-top:20px; justify-content:flex-end">
+                <button class="btn btn-ghost" style="width:auto" onclick="closeModal('quickAddModal')">Cancelar</button>
+                <button class="btn btn-primary" style="width:auto" onclick="quickAddTaskConfirm()">+ Crear</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="noteModal">
+        <div class="modal-content">
+            <h2 id="modalLabel">Editar Nota</h2>
+            <input type="text" id="noteTitle" class="input-field" placeholder="Título...">
+            <div class="toolbar">
+                <select onchange="insertMD(this.value, ''); this.selectedIndex=0;">
+                    <option value="" disabled selected>Hn</option>
+                    <option value="# ">H1</option>
+                    <option value="## ">H2</option>
+                    <option value="### ">H3</option>
+                </select>
+                <button onclick="insertMD('**', '**')" title="Negrita">B</button>
+                <button onclick="insertMD('*', '*')" title="Cursiva"><i>I</i></button>
+                <button onclick="insertMD('```\n', '\n```')" title="Bloque de código">Cód</button>
+                <button onclick="insertMD('`', '`')" title="Código inline">`</button>
+                <button onclick="insertMD('- ', '')" title="Lista">List</button>
+                <button onclick="insertMD('- [ ] ', '')" title="Checklist">☐</button>
+                <button onclick="insertMD('> ', '')" title="Cita">&ldquo;</button>
+                <button onclick="insertMD('[', '](url)')" title="Link">🔗</button>
+                <button onclick="insertMD('| Col1 | Col2 | Col3 |\n| :--- | :---: | ---: |\n| ', ' | |')" title="Tabla">⊞</button>
+                <button onclick="insertMD('---\n', '')" title="Separador">—</button>
+            </div>
+            <textarea id="noteContent" class="input-field" rows="15" style="font-family:monospace; border-radius: 0 0 8px 8px; margin-top:0;"></textarea>
+            <div style="display:flex; gap:10px; margin-top:20px; justify-content:flex-end">
+                <button class="btn btn-ghost" style="width:auto" onclick="closeModal('noteModal')">Cerrar</button>
+                <button class="btn btn-primary" style="width:auto; padding: 10px 30px" onclick="saveNote()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="readmeModal">
+        <div class="modal-content">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+                <div class="readme-tabs">
+                    <button class="readme-tab active" id="tabES" onclick="switchReadmeTab('ES')">🇦🇷 Español</button>
+                    <button class="readme-tab" id="tabEN" onclick="switchReadmeTab('EN')">🇬🇧 English</button>
+                </div>
+                <button class="btn btn-ghost" style="width:auto;" onclick="closeModal('readmeModal')">✕ Cerrar</button>
+            </div>
+            <div id="readmeContent" class="markdown-content"></div>
+        </div>
+    </div>
+
+    <script type="text/plain" id="readme-es">
+# Mi Kanban
+
+![Version](https://img.shields.io/badge/versión-1.0-blue) ![Language](https://img.shields.io/badge/lenguaje-HTML5%20%2F%20JS-orange) ![License](https://img.shields.io/badge/licencia-GPL--3.0-green) ![Status](https://img.shields.io/badge/estado-estable-brightgreen)
+
+---
+Tablero Kanban personal que funciona completamente en el navegador, sin servidor ni base de datos. Todos los datos se guardan localmente en el dispositivo, pudiendo exportar a un archivo .json.
+¡SÓLO TRES ARCHIVOS! (115kb)
+Podés subir los archivos a tu servidor o usarlo desde tu PC, localmente. O ambas cosas a la vez.
+
+---
+
+## Requisitos
+
+- Navegador moderno (Firefox, Brave, Chrome, Pale Moon)
+- Los siguientes archivos deben estar en el mismo directorio:
+  - `index.html`
+  - `marked.min.js` (v9.x recomendada)
+  - `tucan.png`
+
+---
+
+## Estructura del tablero
+
+El tablero se organiza en **columnas** que contienen **tareas**. Cada tarea puede tener **notas** con formato Markdown.
+
+### Columnas
+
+- Se crean desde el menú lateral (☰)
+- Se pueden **renombrar** haciendo doble clic en el nombre
+- Se pueden eliminar con el botón 🗑️ del encabezado
+- Al eliminar una columna se eliminan también sus tareas
+- Cada columna muestra un **contador** con la cantidad de tareas visibles
+- El color de cada columna es **personalizable** con una paleta de 8 colores (botón 🎨)
+- El botón ➕ en el encabezado abre un modal para agregar una tarea directamente a esa columna
+
+### Tareas
+
+- Se crean desde el menú lateral o con el botón ➕ de cada columna
+- Se pueden mover entre columnas arrastrando (escritorio) o con pulsación larga (~400ms) en móvil
+- Se pueden **reordenar dentro de la misma columna** arrastrando una tarea sobre otra
+- Admiten **etiquetas** separadas por comas para clasificarlas
+- Las etiquetas `urgente` e `importante` tienen estilo visual especial (blanco sobre rojo, amarillo sobre verde)
+- Admiten una **fecha de vencimiento** con indicador de color: verde (a tiempo), amarillo (vence en 3 días o menos), rojo (vencida)
+- Se editan con el botón ✎ y se eliminan con 🗑️
+
+### Notas
+
+- Cada tarea puede tener múltiples notas con contenido en **Markdown**
+- Las notas se muestran colapsadas bajo la tarea y se expanden al hacer clic en su título
+- Cada nota guarda su **fecha de creación**, que se muestra junto al título
+- Al guardar una nota aparece un **aviso de confirmación** (o de error si el contenido está vacío)
+- El modal de edición permanece abierto tras guardar, para continuar editando
+
+---
+
+## Búsqueda y filtros
+
+- El campo de búsqueda en el encabezado filtra en tiempo real por título, etiquetas y contenido de notas
+- Hacer clic en una etiqueta filtra todas las tareas que la compartan
+- Cuando hay un filtro activo, se muestra una **barra indicadora** debajo del encabezado con un botón ✕ para quitarlo
+- Al filtrar, las columnas sin resultados **se ocultan** automáticamente
+- Ambos filtros (búsqueda y etiqueta) son acumulables
+
+---
+
+## Editor de Markdown
+
+La barra de herramientas del editor de notas incluye:
+
+| Botón | Función |
+| :--- | :--- |
+| Hn | Encabezados H1, H2, H3 |
+| B | Negrita |
+| I | Cursiva |
+| Cód | Bloque de código |
+| ` | Código inline |
+| List | Lista con viñetas |
+| ☐ | Checklist |
+| " | Cita |
+| 🔗 | Link |
+| ⊞ | Tabla (3 columnas) |
+| — | Separador horizontal |
+
+### Tablas
+
+La plantilla de ⊞ incluye separadores con alineación izquierda `:---`, centrado `:---:` y derecha `---:`. La línea de separadores es obligatoria para renderizar la tabla.
+
+### Checklists
+
+Los ítems completados (`- [x]`) se muestran en verde. El estado se cambia editando la nota.
+
+---
+
+## Backup
+
+Desde la sección **Backup** del menú lateral:
+
+- **Exportar JSON**: descarga un archivo con todos los datos, con marca de tiempo en el nombre
+- **Importar JSON**: carga un backup previamente exportado, reemplazando los datos actuales
+
+> Se recomienda exportar regularmente. Los datos se guardan en el localStorage del navegador y pueden perderse si se borra el historial o la caché.
+
+---
+
+## Notas técnicas
+
+- Sin dependencias externas en tiempo de ejecución (todo local)
+- Markdown renderizado por [marked.js](https://marked.js.org/) v9.x con soporte GFM completo
+- Compatible con Firefox, Brave, Chrome y Pale Moon
+- El drag & drop en móvil usa pulsación larga (~400ms) para no interferir con el scroll
+- Los datos persisten en localStorage con un wrapper de compatibilidad para Pale Moon
+- La Content Security Policy bloquea explícitamente conexiones de red externas
+
+La idea detrás del uso de localStorage con la capacidad de exportar e importar en formato .json es facilitar la portabilidad sin depender de servidores o backends complejos: el localStorage actúa como almacenamiento de trabajo inmediato, mientras que el archivo .json es el mecanismo de persistencia real a largo plazo.
+
+---
+**Problema con Pale Moon (archivo local)**: al cargar la página puede producirse un intento de conexión a direcciones internas (como 0.0.0.2). Es un comportamiento del navegador, no de la aplicación, y no afecta el funcionamiento ni la privacidad. No ocurre al acceder desde un servidor web.
+
+---
+
+## Ideas
+
+- 📂 Podés crear backups en carpetas específicas para distintos proyectos.
+- 📄 Podés crear columnas para notas de distinto carácter.
+- 🗃️ Podés usar Dropbox o Google Drive para sincronizar tus datos.
+- Ideas para columnas: Ideas, En progreso, Finalizadas, Descartadas, Notas, etc.
+
+---
+
+## Créditos
+
+**Código y desarrollo**
+Claude Sonnet (Anthropic) — arquitectura, implementación, corrección de bugs y compatibilidad cross-browser
+
+**Diseño, concepto y dirección**
+[Daniel Horacio Braga](https://orquidealucinada.net) — diseño visual, definición de funcionalidades, testing en múltiples plataformas (Firefox, Brave, Pale Moon, móvil), y feedback iterativo
+
+**Dependencias**
+- [marked.js](https://marked.js.org/) — parser de Markdown, licencia MIT
+
+---
+
+## Licencia
+
+**Mi Kanban** — Copyright © 2026 [Daniel Horacio Braga](https://orquidealucinada.net)
+
+Este programa es software libre: podés redistribuirlo y/o modificarlo bajo los términos de la **Licencia Pública General de GNU (GPL)**, versión 3 o posterior, publicada por la Free Software Foundation.
+
+Este programa se distribuye con la esperanza de que sea útil, pero **SIN NINGUNA GARANTÍA**. Consulte la Licencia Pública General de GNU para más detalles.
+
+Si no recibiste una copia, consultá [https://www.gnu.org/licenses/](https://www.gnu.org/licenses/).
+
+> Nota: la licencia GPL aplica al código fuente de **Mi Kanban**. La librería **marked.js** se distribuye bajo su propia licencia MIT, compatible con GPL.
+    </script>
+
+    <script type="text/plain" id="readme-en">
+# Mi Kanban
+
+![Version](https://img.shields.io/badge/version-1.0-blue) ![Language](https://img.shields.io/badge/language-HTML5%20%2F%20JS-orange) ![License](https://img.shields.io/badge/license-GPL--3.0-green) ![Status](https://img.shields.io/badge/status-stable-brightgreen)
+
+---
+A personal Kanban board that runs entirely in the browser, with no server or database required. All data is saved locally on your device and can be exported to a .json file.
+ONLY THREE FILES! (115kb)
+You can upload the files to your server or use it locally from your PC. Or both.
+
+---
+
+## Requirements
+
+- A modern browser (Firefox, Brave, Chrome, Pale Moon)
+- The following files must be in the same directory:
+  - `index.html`
+  - `marked.min.js` (v9.x recommended)
+  - `tucan.png`
+
+---
+
+## Board Structure
+
+The board is organized into **columns** containing **tasks**. Each task can have **notes** written in Markdown.
+
+### Columns
+
+- Created from the sidebar menu (☰)
+- Can be **renamed** by double-clicking the column name
+- Deleted with the 🗑️ button in the column header
+- Deleting a column also deletes all its tasks
+- Each column shows a **counter** with the number of visible tasks
+- Column **color is customizable** with a palette of 8 colors (🎨 button)
+- The ➕ button in the header opens a modal to add a task directly to that column
+
+### Tasks
+
+- Created from the sidebar or with the ➕ button on each column
+- Moved between columns by dragging (desktop) or long press (~400ms) on mobile
+- Can be **reordered within the same column** by dragging one task onto another
+- Support **tags** separated by commas
+- The tags `urgente` and `importante` have special visual styles (white on red, yellow on green)
+- Support a **due date** with a color indicator: green (on time), yellow (due within 3 days), red (overdue)
+- Edited with ✎ and deleted with 🗑️
+
+### Notes
+
+- Each task can have multiple notes with **Markdown** content
+- Notes appear collapsed under the task and expand when clicked
+- Each note stores its **creation date**, shown next to the title
+- A **confirmation toast** appears when saving (or an error if the content is empty)
+- The editing modal stays open after saving, to continue editing
+
+---
+
+## Search and Filters
+
+- The search field filters in real time by title, tags and note content
+- Clicking a tag filters all tasks that share it
+- When a filter is active, an **indicator bar** appears below the header with a ✕ button to clear it
+- Columns with no matching results are **automatically hidden**
+- Both filters (search and tag) can be active at the same time
+
+---
+
+## Markdown Editor
+
+The note editor toolbar includes:
+
+| Button | Function |
+| :--- | :--- |
+| Hn | Headings H1, H2, H3 |
+| B | Bold |
+| I | Italic |
+| Cód | Code block |
+| ` | Inline code |
+| List | Bullet list |
+| ☐ | Checklist |
+| " | Blockquote |
+| 🔗 | Link |
+| ⊞ | Table template (3 columns) |
+| — | Horizontal rule |
+
+### Tables
+
+The ⊞ template includes alignment separators: left `:---`, center `:---:`, right `---:`. The separator line is mandatory for the table to render.
+
+### Checklists
+
+Completed items (`- [x]`) are shown in green. State is changed by editing the note.
+
+---
+
+## Backup
+
+From the **Backup** section in the sidebar:
+
+- **Export JSON**: downloads a timestamped file with all board data
+- **Import JSON**: loads a previously exported backup, replacing current data
+
+> Regular exports are recommended. Data is stored in the browser's localStorage and may be lost if history or cache is cleared.
+
+---
+
+## Technical Notes
+
+- No external runtime dependencies (fully local)
+- Markdown rendered by [marked.js](https://marked.js.org/) v9.x with full GFM support
+- Compatible with Firefox, Brave, Chrome and Pale Moon
+- Mobile drag & drop uses long press (~400ms) to avoid interfering with scroll
+- Data persists in localStorage with a compatibility wrapper for Pale Moon
+- Content Security Policy explicitly blocks external network connections  
+
+The idea behind using localStorage with the ability to export and import in .json format is to facilitate portability without relying on servers or complex backends: localStorage acts as immediate working storage, while the .json file is the actual long-term persistence mechanism.
+
+---
+**Issue with Pale Moon (local file)**: When loading the page, an attempt to connect to internal addresses (such as 0.0.0.2) may occur. This is browser behavior, not application behavior, and does not affect functionality or privacy. It does not occur when accessing from a web server.
+
+---
+
+## Ideas
+
+- 📂 Create backups in specific folders for different projects.
+- 📄 Create columns for notes of different kinds.
+- 🗃️ Use Dropbox or Google Drive to sync your data anywhere.
+- Column ideas: Ideas, In Progress, Done, Discarded, Notes, etc.
+
+---
+
+## Credits
+
+**Code and development**
+Claude Sonnet (Anthropic) — architecture, implementation, bug fixing and cross-browser compatibility
+
+**Design, concept and direction**
+[Daniel Horacio Braga](https://orquidealucinada.net) — visual design, feature definition, multi-platform testing (Firefox, Brave, Pale Moon, mobile), and iterative feedback
+
+**Dependencies**
+- [marked.js](https://marked.js.org/) — Markdown parser, MIT license
+
+---
+
+## License
+
+**Mi Kanban** — Copyright © 2026 [Daniel Horacio Braga](https://orquidealucinada.net)
+
+This program is free software: you can redistribute it and/or modify it under the terms of the **GNU General Public License** as published by the Free Software Foundation, either version 3 of the License, or any later version.
+
+This program is distributed in the hope that it will be useful, but **WITHOUT ANY WARRANTY**. See the GNU General Public License for more details.
+
+If you did not receive a copy, see [https://www.gnu.org/licenses/](https://www.gnu.org/licenses/).
+
+> Note: the GPL license applies to the **Mi Kanban** source code. The **marked.js** library is distributed under its own MIT license, compatible with GPL.
+    </script>
+
+    <script>
+        // Wrapper seguro para storage (evita bugs de Pale Moon con localStorage remoto)
+        const storage = (() => {
+            try { localStorage.setItem('_test', '1'); localStorage.removeItem('_test'); return localStorage; }
+            catch(e) { const m = {}; return { getItem: k => m[k]||null, setItem: (k,v) => { m[k]=v; }, removeItem: k => { delete m[k]; }, clear: () => { for(let k in m) delete m[k]; } }; }
+        })();
+
+        let kanbanData = JSON.parse(storage.getItem('kanbanData')) || {"columns":[{"id":1,"name":"Pendientes"},{"id":2,"name":"En curso"}],"tasks":{"1":{"id":1,"title":"Prueba arrastrar esta tarea","columnId":1,"tags":["test"],"notes":[]},"2":{"id":2,"title":"Proyecto en curso","columnId":2,"tags":["test"],"notes":[]}},"nextTaskId":3,"nextColumnId":3};
+
+        let currentTaskId = null;
+        let currentNoteId = null;
+        let activeTagFilter = '';
+        let activeSearch = '';
+
+        function applySearch(val) { activeSearch = val.trim().toLowerCase(); renderBoard(); }
+        function clearSearch() { activeSearch = ''; activeTagFilter = ''; document.getElementById('searchInput').value = ''; document.getElementById('tagFilterSelect').value = ''; renderBoard(); }
+
+        // Configuración para marked v15
+        const markedOptions = { gfm: true };
+
+        function parseMD(text) {
+            if (!text) return '';
+            let html = marked.parse(text, markedOptions);
+            html = html.replace(/<li><input checked[^>]*>/g, '<li style="list-style:none;margin-left:-20px;padding:3px 6px;margin-bottom:3px;border-radius:4px;background:white;color:green;"><span style="font-weight:bold;margin-right:6px;">[✓]</span>');
+            html = html.replace(/<li><input[^>]*type="checkbox"[^>]*>/g, '<li style="list-style:none;margin-left:-20px;padding:3px 6px;margin-bottom:3px;border-radius:4px;background:white;color:black;"><span style="margin-right:6px;">[ ]</span>');
+            return html;
+        }
+
+        function insertMD(pre, post) {
+            const el = document.getElementById('noteContent');
+            const start = el.selectionStart;
+            const end = el.selectionEnd;
+            el.value = el.value.substring(0, start) + pre + el.value.substring(start, end) + post + el.value.substring(end);
+            el.focus();
+        }
+
+        // FUNCIÓN DE EXPORTACIÓN CON TIMESTAMP RESTAURADO
+        function exportData() {
+            const d = new Date();
+            const year = d.getFullYear();
+            const month = (d.getMonth() + 1).toString().padStart(2, '0');
+            const day = d.getDate().toString().padStart(2, '0');
+            const hour = d.getHours().toString().padStart(2, '0');
+            const min = d.getMinutes().toString().padStart(2, '0');
+            const sec = d.getSeconds().toString().padStart(2, '0');
+            
+            const timestamp = `${year}-${month}-${day}_${hour}-${min}-${sec}`;
+            const blob = new Blob([JSON.stringify(kanbanData)], {type: 'application/json'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `kanban_backup_${timestamp}.json`;
+            a.click();
+        }
+
+        function importData(e) {
+            const reader = new FileReader();
+            reader.onload = (ev) => { kanbanData = JSON.parse(ev.target.result); saveData(); renderBoard(); };
+            reader.readAsText(e.target.files[0]);
+        }
+
+        function addColumn() {
+            const name = document.getElementById('newColName').value.trim();
+            if(name) {
+                kanbanData.columns.push({id: kanbanData.nextColumnId++, name: name});
+                document.getElementById('newColName').value = '';
+                saveData(); renderBoard();
+            }
+        }
+
+        function addTask() {
+            const title = document.getElementById('newTaskTitle').value.trim();
+            const tags = document.getElementById('newTaskTags').value.split(',').map(t => t.trim()).filter(t => t);
+            const colId = parseInt(document.getElementById('colSelect').value);
+            if(title && colId) {
+                const id = kanbanData.nextTaskId++;
+                kanbanData.tasks[id] = {id, title, columnId: colId, tags: tags, notes: []};
+                document.getElementById('newTaskTitle').value = '';
+                document.getElementById('newTaskTags').value = '';
+                saveData();
+                renderBoard();
+            }
+        }
+
+        function openEditTask(id) {
+            currentTaskId = id;
+            const task = kanbanData.tasks[id];
+            document.getElementById('editTaskTitle').value = task.title;
+            document.getElementById('editTaskTags').value = (task.tags || []).join(', ');
+            document.getElementById('editTaskDue').value = task.due || '';
+            openModal('taskModal');
+        }
+
+        function updateTask() {
+            const task = kanbanData.tasks[currentTaskId];
+            task.title = document.getElementById('editTaskTitle').value.trim();
+            task.tags = document.getElementById('editTaskTags').value.split(',').map(t => t.trim()).filter(t => t);
+            task.due = document.getElementById('editTaskDue').value || null;
+            saveData();
+            renderBoard();
+            closeModal('taskModal');
+        }
+
+        function saveNote() {
+            try {
+                const titleVal = document.getElementById('noteTitle').value.trim() || 'Nota';
+                const textVal = document.getElementById('noteContent').value.trim();
+                if (!textVal) { showToast('El contenido no puede estar vacío.', 'error'); return; }
+                const task = kanbanData.tasks[currentTaskId];
+                if (currentNoteId) {
+                    const n = task.notes.find(x => x.id === currentNoteId);
+                    if (n) { n.title = titleVal; n.text = textVal; }
+                } else {
+                    if (!task.notes) task.notes = [];
+                    task.notes.push({ id: Date.now(), title: titleVal, text: textVal, createdAt: Date.now() });
+                }
+                saveData(); renderBoard();
+                showToast('✔ Nota guardada correctamente.');
+            } catch(e) {
+                showToast('Error al guardar la nota.', 'error');
+            }
+        }
+
+        function dueBadge(due) {
+            if (!due) return '';
+            const [y, m, d] = due.split('-').map(Number);
+            const today = new Date(); today.setHours(0,0,0,0);
+            const dueDate = new Date(y, m - 1, d);
+            const diff = Math.round((dueDate - today) / 86400000);
+            let cls, label;
+            if (diff < 0)           { cls = 'due-late'; label = '⚠️ '; }
+            else if (diff === 0)    { cls = 'due-ok';   label = '📅 '; }
+            else if (diff <= 3)     { cls = 'due-soon'; label = '⏰ '; }
+            else                    { cls = 'due-ok';   label = '📅 '; }
+            const fmt = dueDate.toLocaleDateString('es-AR', {day:'2-digit', month:'2-digit', year:'2-digit'});
+            return `<span style="font-size:12px;">Vencimiento: </span> <span class="due-date-badge ${cls}">${label}${fmt}</span>`;
+        }
+
+        function startRenameCol(id, el) {
+            const col = kanbanData.columns.find(c => c.id === id);
+            if (!col) return;
+            const count = el.querySelector('.col-count');
+            const countHTML = count ? count.outerHTML : '';
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = col.name;
+            input.className = 'col-name-input';
+            el.replaceWith(input);
+            input.focus();
+            input.select();
+            function save() {
+                const newName = input.value.trim();
+                if (newName) col.name = newName;
+                saveData(); renderBoard();
+            }
+            input.addEventListener('blur', save);
+            input.addEventListener('keydown', e => {
+                if (e.key === 'Enter') { input.blur(); }
+                if (e.key === 'Escape') { saveData(); renderBoard(); }
+            });
+        }
+
+        let quickAddColId = null;
+        function quickAddTask(colId) {
+            quickAddColId = colId;
+            const col = kanbanData.columns.find(c => c.id === colId);
+            document.getElementById('quickAddTitle').textContent = 'Nueva tarea en: ' + (col ? col.name : '');
+            document.getElementById('quickTaskTitle').value = '';
+            document.getElementById('quickTaskTags').value = '';
+            document.getElementById('quickTaskDue').value = '';
+            openModal('quickAddModal');
+            setTimeout(() => document.getElementById('quickTaskTitle').focus(), 50);
+        }
+        function quickAddTaskConfirm() {
+            const title = document.getElementById('quickTaskTitle').value.trim();
+            if (!title) { showToast('El título no puede estar vacío.', 'error'); return; }
+            const tags = document.getElementById('quickTaskTags').value.split(',').map(t => t.trim()).filter(t => t);
+            const due = document.getElementById('quickTaskDue').value || null;
+            const id = kanbanData.nextTaskId++;
+            kanbanData.tasks[id] = { id, title, columnId: quickAddColId, tags, notes: [], due };
+            saveData(); renderBoard();
+            closeModal('quickAddModal');
+            showToast('✔ Tarea creada.');
+        }
+
+        function renderBoard() {
+            const board = document.getElementById('kanbanBoard');
+            const select = document.getElementById('colSelect');
+            const tagSel = document.getElementById('tagFilterSelect');
+            board.innerHTML = ''; select.innerHTML = '';
+
+            // Tags
+            const allTags = new Set();
+            Object.values(kanbanData.tasks).forEach(t => (t.tags || []).forEach(tg => allTags.add(tg)));
+            tagSel.innerHTML = '<option value="">Todas</option>';
+            Array.from(allTags).sort().forEach(tg => {
+                tagSel.innerHTML += `<option value="${tg}" ${activeTagFilter===tg?'selected':''}>${tg}</option>`;
+            });
+
+            // Barra de filtros activos
+            const filterBar = document.getElementById('filterBar');
+            filterBar.innerHTML = '';
+            if (activeTagFilter) {
+                const b = document.createElement('div');
+                b.className = 'filter-badge';
+                b.innerHTML = `🏷️ Tag: <strong>${activeTagFilter}</strong><button onclick="clearTagFilter()" title="Quitar filtro">✕</button>`;
+                filterBar.appendChild(b);
+            }
+            if (activeSearch) {
+                const b = document.createElement('div');
+                b.className = 'filter-badge';
+                b.innerHTML = `🔍 Buscar: <strong>${activeSearch}</strong><button onclick="clearSearch()" title="Quitar búsqueda">✕</button>`;
+                filterBar.appendChild(b);
+            }
+
+            kanbanData.columns.forEach(col => {
+                select.innerHTML += `<option value="${col.id}">${col.name}</option>`;
+
+                const colColor = col.color || '#4a6fa5';
+                const colTasks = Object.values(kanbanData.tasks).filter(t => t.columnId === col.id);
+                const visibleTasks = colTasks
+                    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+                    .filter(t => {
+                    if (activeTagFilter && !(t.tags || []).includes(activeTagFilter)) return false;
+                    if (activeSearch) {
+                        const inTitle = t.title.toLowerCase().includes(activeSearch);
+                        const inTags = (t.tags || []).some(tg => tg.toLowerCase().includes(activeSearch));
+                        const inNotes = (t.notes || []).some(n => (n.title||'').toLowerCase().includes(activeSearch)||(n.text||'').toLowerCase().includes(activeSearch));
+                        if (!inTitle && !inTags && !inNotes) return false;
+                    }
+                    return true;
+                });
+
+                const colDiv = document.createElement('div');
+                colDiv.className = 'column';
+                colDiv.style.background = colColor;
+
+                // Paleta de colores
+                const swatches = COL_COLORS.map(c =>
+                    `<div class="col-color-swatch" style="background:${c}" onclick="setColColor(${col.id},'${c}')" title="${c}"></div>`
+                ).join('');
+
+                colDiv.innerHTML = `
+                    <div class="column-header" style="position:relative;">
+                        <span class="col-name-label" ondblclick="startRenameCol(${col.id}, this)" title="Doble clic para renombrar">${col.name} <span class="col-count">${visibleTasks.length}</span></span>
+                        <div class="col-header-actions">
+                            <button class="col-color-btn" onclick="quickAddTask(${col.id})" title="Agregar tarea">➕</button>
+                            <button class="col-color-btn" onclick="toggleColorPicker(${col.id})" title="Color de columna">🎨</button>
+                            <div class="col-color-picker" data-col-id="${col.id}">${swatches}</div>
+                            <button class="btn-icon btn-icon-delete" onclick="deleteCol(${col.id})" style="text-shadow: -1px -1px white;color:navy;" title="Eliminar columna">🗑️</button>
+                        </div>
+                    </div>`;
+
+                const container = document.createElement('div');
+                container.className = 'tasks-container';
+                container.style.background = colColor;
+                container.dataset.colId = col.id;
+                container.ondragover = (e) => e.preventDefault();
+                container.ondrop = (e) => {
+                    const id = e.dataTransfer.getData('text');
+                    if (id) { kanbanData.tasks[id].columnId = col.id; saveData(); renderBoard(); }
+                };
+
+                visibleTasks.forEach(task => {
+                    const taskDiv = document.createElement('div');
+                    taskDiv.className = 'task';
+                    taskDiv.dataset.taskId = task.id;
+                    taskDiv.draggable = true;
+                    taskDiv.ondragstart = (e) => { e.dataTransfer.setData('text', task.id); draggedTaskId = task.id; };
+                    taskDiv.ondragend = () => { draggedTaskId = null; };
+
+                    // Drag entre tareas de la misma columna
+                    taskDiv.ondragover = (e) => { e.preventDefault(); e.stopPropagation(); taskDiv.classList.add('drag-over'); };
+                    taskDiv.ondragleave = () => taskDiv.classList.remove('drag-over');
+                    taskDiv.ondrop = (e) => {
+                        e.stopPropagation();
+                        taskDiv.classList.remove('drag-over');
+                        const fromId = parseInt(e.dataTransfer.getData('text'));
+                        const toId = task.id;
+                        if (fromId === toId) return;
+                        const fromTask = kanbanData.tasks[fromId];
+                        if (!fromTask) return;
+                        // Mover entre columnas si es necesario
+                        fromTask.columnId = col.id;
+                        // Reordenar: insertar fromTask antes de toTask en el orden de la columna
+                        const colTaskIds = Object.values(kanbanData.tasks)
+                            .filter(t => t.columnId === col.id)
+                            .map(t => t.id);
+                        const fromIdx = colTaskIds.indexOf(fromId);
+                        const toIdx = colTaskIds.indexOf(toId);
+                        if (fromIdx !== -1) colTaskIds.splice(fromIdx, 1);
+                        const newToIdx = colTaskIds.indexOf(toId);
+                        colTaskIds.splice(newToIdx, 0, fromId);
+                        // Aplicar orden usando propiedad 'order'
+                        colTaskIds.forEach((id, idx) => { if (kanbanData.tasks[id]) kanbanData.tasks[id].order = idx; });
+                        saveData(); renderBoard();
+                    };
+
+                    const notesHtml = (task.notes || []).map(n => {
+                        const dateStr = n.createdAt ? new Date(n.createdAt).toLocaleDateString('es-AR', {day:'2-digit',month:'2-digit',year:'2-digit'}) : '';
+                        return `
+                        <div class="note-item">
+                            <div class="note-header" onclick="this.parentElement.classList.toggle('expanded')">
+                                <span class="note-title-text">${n.title || 'Nota'}${dateStr ? `<span class="note-date">${dateStr}</span>` : ''}</span>
+                                <div class="note-actions">
+                                    <button onclick="event.stopPropagation(); openNoteModal(${task.id}, ${n.id})" class="btn-icon btn-icon-edit" title="Editar nota">✎</button>
+                                    <button onclick="event.stopPropagation(); deleteNote(${task.id}, ${n.id})" class="btn-icon btn-icon-delete" title="Borrar nota">🗑️</button>
+                                </div>
+                            </div>
+                            <div class="note-body markdown-content">${parseMD(n.text)}</div>
+                        </div>`; 
+                    }).join('');
+
+                    taskDiv.innerHTML = `
+                        <div class="task-header">
+                            <strong class="task-title">${task.title}</strong>
+                            <div class="task-actions">
+                                <button onclick="openEditTask(${task.id})" class="btn-icon btn-icon-edit" title="Editar tarea">✎</button>
+                                <button onclick="deleteTask(${task.id})" class="btn-icon btn-icon-delete" title="Eliminar tarea">🗑️</button>
+                            </div>
+                        </div>
+                        <div class="task-tags">${(task.tags || []).map(t => `<span class="tag ${(t==='urgente'||t==='urgent')?'tag-urgente':(t==='importante'||t==='important')?'tag-importante':''}" onclick="applyTagFilter('${t}')" title="Filtrar por ${t}">${t}</span>`).join('')}</div>
+                        ${task.due ? `<div>${dueBadge(task.due)}</div>` : ''}
+                        <button class="btn btn-ghost btn-add-note" onclick="openNoteModal(${task.id})">+ Nota</button>
+                        ${notesHtml}
+                    `;
+                    setupTouchDrag(taskDiv);
+                    container.appendChild(taskDiv);
+                });
+                colDiv.appendChild(container);
+                if ((activeTagFilter || activeSearch) && visibleTasks.length === 0) return;
+                board.appendChild(colDiv);
+            });
+        }
+
+        function openNoteModal(tid, nid = null) {
+            currentTaskId = tid; currentNoteId = nid;
+            if(nid) {
+                const n = kanbanData.tasks[tid].notes.find(x => x.id === nid);
+                document.getElementById('noteTitle').value = n.title || '';
+                document.getElementById('noteContent').value = n.text || '';
+            } else {
+                document.getElementById('noteTitle').value = '';
+                document.getElementById('noteContent').value = '';
+            }
+            openModal('noteModal');
+        }
+
+        const README_CONTENT = document.getElementById('readme-es').textContent;
+        const README_CONTENT_EN = document.getElementById('readme-en').textContent;
+        let currentReadmeLang = 'ES';
+
+        function openReadme() {
+            toggleSidebar(false);
+            switchReadmeTab(currentReadmeLang);
+            openModal('readmeModal');
+        }
+
+        function switchReadmeTab(lang) {
+            currentReadmeLang = lang;
+            const content = lang === 'EN' ? README_CONTENT_EN : README_CONTENT;
+            document.getElementById('readmeContent').innerHTML = marked.parse(content, { gfm: true, breaks: true });
+            document.getElementById('tabES').classList.toggle('active', lang === 'ES');
+            document.getElementById('tabEN').classList.toggle('active', lang === 'EN');
+        }
+
+        function toggleSidebar(s) { document.getElementById('sidebar').classList.toggle('open', s); document.getElementById('sidebarOverlay').classList.toggle('show', s); }
+        function openModal(id) { document.getElementById(id).classList.add('show'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+        function saveData() { storage.setItem('kanbanData', JSON.stringify(kanbanData)); }
+        function applyTagFilter(t) { activeTagFilter = t; document.getElementById('tagFilterSelect').value = t; toggleSidebar(false); renderBoard(); }
+        function clearTagFilter() { activeTagFilter = ''; document.getElementById('tagFilterSelect').value = ''; renderBoard(); }
+
+        // ── TOAST ──
+        let toastTimer = null;
+        function showToast(msg, type = 'success') {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = `show ${type}`;
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => { t.className = ''; }, 2500);
+        }
+
+        // ── CONFIRM MODAL ──
+        let confirmCallback = null;
+        function showConfirm(title, msg, onOk) {
+            document.getElementById('confirmTitle').textContent = title;
+            document.getElementById('confirmMsg').textContent = msg;
+            confirmCallback = onOk;
+            document.getElementById('confirmModal').classList.add('show');
+        }
+        function closeConfirm() {
+            document.getElementById('confirmModal').classList.remove('show');
+            confirmCallback = null;
+        }
+        document.getElementById('confirmOkBtn').onclick = () => {
+            if (confirmCallback) confirmCallback();
+            closeConfirm();
+        };
+
+        // ── COLORES DE COLUMNA ──
+        // ── podés agregar más colores al array ──
+        const COL_COLORS = ['#4a6fa5','#aedddd','#dd4444','#f8bbd0','#8B4513','#ffee93','#009455','#adf7b6'];
+        function setColColor(id, color) {
+            const col = kanbanData.columns.find(c => c.id === id);
+            if (col) { col.color = color; saveData(); renderBoard(); }
+        }
+        function toggleColorPicker(colId) {
+            document.querySelectorAll('.col-color-picker').forEach(p => {
+                if (p.dataset.colId == colId) p.classList.toggle('open');
+                else p.classList.remove('open');
+            });
+        }
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.col-color-btn') && !e.target.closest('.col-color-picker')) {
+                document.querySelectorAll('.col-color-picker').forEach(p => p.classList.remove('open'));
+            }
+        });
+
+        function deleteCol(id) {
+            showConfirm('Eliminar columna', '¿Borrar la columna y todas sus tareas?', () => {
+                kanbanData.columns = kanbanData.columns.filter(c => c.id !== id);
+                Object.keys(kanbanData.tasks).forEach(k => { if (kanbanData.tasks[k].columnId === id) delete kanbanData.tasks[k]; });
+                saveData(); renderBoard();
+            });
+        }
+        function deleteTask(id) {
+            showConfirm('Eliminar tarea', '¿Borrar esta tarea y todas sus notas?', () => {
+                delete kanbanData.tasks[id]; saveData(); renderBoard();
+            });
+        }
+        function deleteNote(tid, nid) {
+            showConfirm('Eliminar nota', '¿Borrar esta nota?', () => {
+                kanbanData.tasks[tid].notes = kanbanData.tasks[tid].notes.filter(x => x.id !== nid);
+                saveData(); renderBoard();
+            });
+        }
+        function clearAllData() {
+            showConfirm('⚠️ BORRAR TODO', '¿Eliminar todas las columnas, tareas y notas? Esta acción no se puede deshacer.', () => {
+                storage.clear(); location.reload();
+            });
+        }
+
+        // ── Touch drag & drop con long-press (Firefox móvil) ──
+        let draggedTaskId = null;
+        let touchClone = null;
+        let touchOffsetX = 0;
+        let touchOffsetY = 0;
+        let longPressTimer = null;
+        let isDragging = false;
+        const LONG_PRESS_MS = 400;
+
+        function setupTouchDrag(el) {
+            let startX, startY, moved;
+
+            el.addEventListener('touchstart', function(e) {
+                if (e.target.closest('button')) return;
+                const touch = e.touches[0];
+                startX = touch.clientX;
+                startY = touch.clientY;
+                moved = false;
+                cancelTouch();
+
+                longPressTimer = setTimeout(() => {
+                    if (moved) return;
+                    const rect = el.getBoundingClientRect();
+                    draggedTaskId = el.dataset.taskId;
+                    touchOffsetX = startX - rect.left;
+                    touchOffsetY = startY - rect.top;
+                    isDragging = true;
+                    if (navigator.vibrate) navigator.vibrate(60);
+                    touchClone = el.cloneNode(true);
+                    touchClone.style.cssText = `position:fixed;z-index:9999;width:${rect.width}px;opacity:0.75;pointer-events:none;left:${rect.left}px;top:${rect.top}px;box-shadow:4px 4px 12px rgba(0,0,0,0.5);`;
+                    document.body.appendChild(touchClone);
+                }, LONG_PRESS_MS);
+            }, {passive: true});
+
+            el.addEventListener('touchmove', function(e) {
+                const touch = e.touches[0];
+                if (!isDragging) {
+                    // Detectar movimiento antes del long press → cancelar
+                    if (Math.abs(touch.clientX - startX) > 8 || Math.abs(touch.clientY - startY) > 8) {
+                        moved = true;
+                        cancelTouch();
+                    }
+                    return;
+                }
+                // Drag activo: mover clon y bloquear scroll
+                touchClone.style.left = (touch.clientX - touchOffsetX) + 'px';
+                touchClone.style.top  = (touch.clientY - touchOffsetY) + 'px';
+                e.preventDefault();
+            }, {passive: false});
+
+            el.addEventListener('touchend', function(e) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+                if (!isDragging || !touchClone) { isDragging = false; return; }
+                const touch = e.changedTouches[0];
+                document.body.removeChild(touchClone);
+                touchClone = null;
+                isDragging = false;
+                const under = document.elementFromPoint(touch.clientX, touch.clientY);
+                const target = under ? under.closest('.tasks-container') : null;
+                if (target && target.dataset.colId) {
+                    kanbanData.tasks[draggedTaskId].columnId = parseInt(target.dataset.colId);
+                    saveData(); renderBoard();
+                }
+                draggedTaskId = null;
+                e.preventDefault();
+            }, {passive: false});
+
+            el.addEventListener('touchcancel', cancelTouch, {passive: true});
+        }
+
+        function cancelTouch() {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+            if (touchClone && touchClone.parentNode) { document.body.removeChild(touchClone); touchClone = null; }
+            isDragging = false;
+            draggedTaskId = null;
+        }
+        // ── Fin touch drag ──
+
+        renderBoard();
+    </script>
+
+
+</body>
+</html>
