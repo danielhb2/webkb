@@ -175,6 +175,5 @@ Deberías haber recibido una copia de la Licencia Pública General de GNU junto 
 
 ## Video
 
-| Demo 1 | Demo 2 |
-|--------|--------|
-| <video width="100%" controls><source src="docs/video1.webm" type="video/webm"></video> | <video width="100%" controls><source src="docs/video2.webm" type="video/webm"></video> |
+🎬 [Ver demo 1](docs/video1.webm)
+🎬 [Ver demo 2](docs/video2.webm)
