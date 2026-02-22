@@ -174,6 +174,11 @@ You should have received a copy of the GNU General Public License along with thi
 
 ## Video
 
-![video 1](http://orquidealucinada.net/webkb/video1.webm)
-![video 2](http://orquidealucinada.net/webkb/video2.webm)
+<video width="49%" controls>
+  <source src="https://orquidealucinada.net/webkb/video1.webm" type="video/webm">
+</video>
+
+<video width="49%" controls>
+  <source src="https://orquidealucinada.net/webkb/video2.webm" type="video/webm">
+</video>
 
