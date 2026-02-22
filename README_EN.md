@@ -174,8 +174,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 ## Video
 
-🎬 [![video 1][images/video1.png)](https://orquidealucinada.net/webkb/video1.webm)
+🎬 [![video 1](images/video1.png)](https://orquidealucinada.net/webkb/video1.webm)
 
-🎬 [![video 1][images/video1.png)](https://orquidealucinada.net/webkb/video2.webm)
-
+🎬 [![video 1](images/video1.png)](https://orquidealucinada.net/webkb/video2.webm)
 
