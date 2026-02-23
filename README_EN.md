@@ -173,7 +173,7 @@ You should have received a copy of the GNU General Public License along with thi
 
 > Note: the GPL license applies to the **Mi Kanban** source code. The **marked.js** library is distributed under its own MIT license, which is compatible with GPL.
 
-## Video
+## 🎬 Video
 
-🎬 [![video 1](images/video1.png)](https://orquidealucinada.net/webkb/video1.mp4) [![video 1](images/video2.png)](https://orquidealucinada.net/webkb/video2.mp4)
+[![video 1](images/video1.png)](https://orquidealucinada.net/webkb/video1.mp4) [![video 1](images/video2.png)](https://orquidealucinada.net/webkb/video2.mp4)
 
