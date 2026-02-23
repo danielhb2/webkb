@@ -179,4 +179,12 @@ Deberías haber recibido una copia de la Licencia Pública General de GNU junto 
 
 🎬 [![video 1](images/video1.png)](https://orquidealucinada.net/webkb/video1.mp4)  [![video 1](images/video2.png)](https://orquidealucinada.net/webkb/video2.mp4)
 
+<video width="49%" controls>
+  <source src="https://orquidealucinada.net/webkb/video1.mp4" type="video/mp4">
+</video>
+
+<video width="49%" controls>
+  <source src="https://orquidealucinada.net/webkb/video2.mp4" type="video/mp4">
+</video>
+
 
