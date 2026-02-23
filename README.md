@@ -174,9 +174,8 @@ Deberías haber recibido una copia de la Licencia Pública General de GNU junto 
 
 > Nota: la licencia GPL aplica al código fuente de **Mi Kanban**. La librería **marked.js** se distribuye bajo su propia licencia MIT, que es compatible con GPL.
 
-## Video
+## 🎬 Video
 
-
-🎬 [![video 1](images/video1.png)](https://orquidealucinada.net/webkb/video1.mp4)  [![video 1](images/video2.png)](https://orquidealucinada.net/webkb/video2.mp4)
+[![video 1](images/video1.png)](https://orquidealucinada.net/webkb/video1.mp4)  [![video 1](images/video2.png)](https://orquidealucinada.net/webkb/video2.mp4)
 
 
